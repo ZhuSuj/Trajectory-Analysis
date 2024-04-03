@@ -1,0 +1,28 @@
+[
+  
+  {"meetingroom":"confA", "color":"#F08080"},
+  {"meetingroom":"confB", "color":"#FA8072"},
+  {"meetingroom":"confC", "color":"#E9967A"},
+  {"meetingroom":"confD", "color":"#FFA07A"},
+  {"meetingroom":"signDesk", "color":"#FFFF00"},
+  {"meetingroom":"poster", "color":"#2F4F4F"},
+  {"meetingroom":"wc1", "color":"#DB7093"},
+  {"meetingroom":"wc2", "color":"#FF1493"},
+  {"meetingroom":"wc3", "color":"#FF69B4"},
+  {"meetingroom":"room1", "color":"#ADFF2F"},
+  {"meetingroom":"room2", "color":"#32CD32"},
+  {"meetingroom":"room3", "color":"#00FA9A"},
+  {"meetingroom":"room4", "color":"#2E8B57"},
+  {"meetingroom":"room5", "color":"#008000"},
+  {"meetingroom":"room6", "color":"#6B8E23"},
+  {"meetingroom":"exhibition", "color":"#778899"},
+  {"meetingroom":"mainMeeting", "color":"#CD5C5C"},
+  {"meetingroom":"serviceRoom", "color":"#FFD700"},
+  {"meetingroom":"restaurant", "color":"#A52A2A"},
+  {"meetingroom":"relaxRoom", "color":"#A0522D"},
+  {"meetingroom":"escalator", "color":"#1E90FF"},
+  {"meetingroom":"importExport", "color":"#00FFFF"},
+  {"meetingroom":"secondAisle", "color":"#FF4500"},
+  {"meetingroom":"firstAisle", "color":"#FF6347"}
+  
+]

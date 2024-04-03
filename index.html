@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <!--<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>-->
+    <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="img/multistream.png" />
+    <!--<link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.2.0/css/font-awesome.min.css">-->
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-clearmin.min.css">
+    <link rel="stylesheet" type="text/css" href="css/style-multiresolution.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/style-tree.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/style-tooltip.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/loader.css"></link>
+
+    <script src="dependence/d3.v4.min.js"></script>
+    <script src="dependence/d3.v3.min.js"></script>
+    <script src="dependence/colorbrewer.js"></script>
+
+    <script src="dependence/losso.js"></script>
+    <link rel="stylesheet" href="css.css">
+    <script src="dependence/jquery-1.9.0.min.js"></script>
+    <script src="jDBSCAN.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <!--<script src="dependence/distrochartforregionvolum.js"></script>-->
+    <!--<script src="dependence/echarts.min.js"></script>-->
+
+<!--&lt;!&ndash;for chord diagram&ndash;&gt;-->
+    <!--<script src="http://underscorejs.org/underscore-min.js"></script>-->
+    <!--<script src="https://rawgit.com/sghall/7859113/raw/422da4401f7d4fc0352a7c49961d24f03716be7a/gistfile1.js"></script>-->
+
+
+
+
+</head>
+<style>
+
+    /*body { background-color: #2B2B2B; }*/
+    /*body {*/
+    /*background-image:url('data/bck_new2.jpg');*/
+    /*background-repeat:repeat-x;}*/
+
+
+
+</style>
+<body style=" height: 100%; margin: 0">
+
+<div id="fb-root"></div>
+
+<div id="loader"></div>
+<div id="cm-menu">
+    <!--<nav class="cm-navbar cm-navbar-primary">-->
+        <!--<div class="cm-flex">-->
+            <!--<div class="cm-logos"></div>-->
+        <!--</div>-->
+        <!--<div class="btn btn-primary md-menu-white" style="position: absolute; right:0px" data-toggle="cm-menu"></div>-->
+    <!--</nav>-->
+    <div id="cm-menu-content">
+        <svg id="tree-vis"></svg>
+    </div>
+</div>
+<header id="cm-header" style="display: inline;">
+    <nav class="cm-navbar cm-navbar-primary">
+        <div class="btn btn-primary md-menu-white hidden-md hidden-lg"
+             data-toggle="cm-menu"></div>
+        <div class="cm-flex">
+            <h1 style="display: inline;">Music genre evolution</h1>
+            <i id="panelInfo" class="fa fa-info-circle fa-lg"
+               data-toggle="modal" data-target="#infoModal"></i>
+        </div>
+        <div class="pull-right" style="padding: 15px 15px 0px 15px; width: 0px;">
+            <a  class="twitter-share-button" href="https://twitter.com/share"
+                data-size="small" data-text="MultiStream (a time series visualization)"
+                data-url="https://goo.gl/LjSjMK"
+                data-hashtags="timeseries,visualization,d3js" data-via=""
+                data-related="timeseries,visualization,hierarchical,d3js"> Tweet </a>
+        </div>
+        <div class="pull-right" style="padding: 15px 15px 0px 15px; width: 0px;">
+            <a  class="fb-share-button"
+                data-href="https://goo.gl/LjSjMK"
+                data-layout="button" data-size="small"></a>
+        </div>
+        <div class="pull-right">
+            <button id="svg-export"
+                    class="btn btn-primary md-download-svg-white"></button>
+        </div>
+    </nav>
+</header>
+
+
+<div id="global" style="display: none;">
+    <!-- style="overflow-y:hidden; -->
+    <div class="container-fluid cm-container-white"
+         style="overflow: hidden; margin-bottom: 10px; padding-top: 10px; padding-bottom: 10px;">
+        <svg id="multiresolution-vis"></svg>
+    </div>
+    <footer class="cm-footer" style="display: none;"> </footer>
+
+    <nav id="menu-bottom" style="position:absolute;top:379px;left:307px;width:1591px;";
+         class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="col-md-3">
+                <div id="col-visualization">
+                    <label class="radio-inline"><input id="label-streamgraph"
+                                                       type="radio" name="optradio" value="stream" checked>Streamgraph</label>
+                    <label class="radio-inline"><input id="label-stackedgraph"
+                                                       type="radio" name="optradio" value="stacked">Stackedgraph</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div id="col-projections">
+                    <div class="col-md-4">
+                        <h6>
+                            &#x3B1; <input type="number" id="alpha" name="alpha"
+                                           data-toggle="tooltip" title="detailed-area">
+                        </h6>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>
+                            &#x3B2; <input type="number" id="beta" name="beta"
+                                           data-toggle="tooltip" title="transition-areas">
+                        </h6>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>
+                            &#x3B3; <input type="number" id="gamma" name="gamma"
+                                           data-toggle="tooltip" title="context-areas">
+                        </h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="input-group-prepend">
+															<span style="top:12px;position:absolute" style="top:12px" class="input-group-text">
+																% Variation:
+																&nbsp;
+																<img class="icon" alt="increase" src="img/events/arrow_up.svg">
+																&nbsp;
+																<input type="number" value = "700"  id="porcentageVariationIncrease" style="width:23%;" name="porcentage" title="% Variation Increase">
+																&nbsp;
+																<img class="icon" alt="increase" src="img/events/arrow_down.svg">
+																&nbsp;
+																<input  type="number" value = "500"  id="porcentageVariationDecrease"  style="width:23%;"  name="porcentage" title="% Variation Decrease">
+																&nbsp;
+
+																&nbsp;
+																<button style="padding: 0 5px 0 5px;" id="btnMCS" type="button" class="btn vis-menu-btn"
+                                                                        data-toggle="tooltip" data-placement="bottom" title="Maximum Contiguous Subarray Period">
+
+																</button>
+															</span>
+                </div>
+            </div>
+            <!-- 				<div class="col-md-2"> -->
+            <!-- 					<div id="col-checked"> -->
+            <!-- 						<label class="checkbox"><input id="fading-colors" -->
+            <!-- 							type="checkbox" value="">Fading colors</label> -->
+            <!-- 					</div> -->
+            <!-- 				</div> -->
+        </div>
+    </nav>
+
+</div>
+
+<div id="alert-msg"
+     class="alert alert-danger alert-dismissable hidden fade in">
+    <span id="close-alert" class="close">&times;</span> <strong>Warning!</strong>
+    not allowed due to constraints.
+</div>
+
+<!-- Modal information -->
+<div class="modal fade" id="infoModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title" style="text-transform: capitalize;">
+                    					</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <strong>About: </strong>This visualization shows the evolution of paticicants<br><strong>Period: </strong>From 1960 to 2016<br><strong>Dataset: </strong>5430 participants					</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id = "tooltipfoot1" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal data -->
+<div class="modal fade" id="data-modal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div id="data-modal-title" class="modal-header"></div>
+            <div id="data-modal-msg" class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" id = "tooltipfoot2" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<div    style="z-index:998;border-bottom:1px solid #667080;
+background:#0d3755;
+position: absolute;top: 0px;left:0px; height: 4%;width:100%;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+">
+<div style="position: absolute;left: 243px;top: 2px;height:10%;width:100%">
+    <p style="font-family:Microsoft YaHei;position:absolute; left:157px; color: #ffffff;font-size: 25px;letter-spacing:2px">
+        <strong>MicroVis: Microscopic Visual Analysis of High-density Trajectory
+    </p>
+</div>
+    <div style="z-index:999;border:1px solid #667080;
+/*background:#0d3755;*/
+position: absolute;top: 40px;right:0px; height: 481px;width:42px;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+">
+        <button type="button" class="btn btn-default" aria-label="Left Align">
+            <span class="glyphicon glyphicon-align-left" aria-hidden="true"></span>
+        </button>
+
+        <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+        </a><span style="font-size:10px;color:black">&nbsp;&nbsp;&nbsp;搜索</span>
+        <a href="#">
+        <input style = "width:40px" type="text" class="form-control1" id="txt2" placeholder="Search...">
+        <!--<a href="#">-->
+        <!--<span type="button" id = "idsearch" style="top: 6px; font-size:29px; left:-2px; color:black"-->
+              <!--class="searchseveralpid glyphicon glyphicon-search" >-->
+        <!--</span>-->
+        <button type="button" style = "width:40px; color:black ">
+        <span type="button" id = "idsearch"
+              style="font-size:20px; left:3px "
+              class="glyphicon glyphicon-menu-right" >
+        </span>
+        </button>
+
+
+
+            <!--</a><span style="font-size:10px;">Search</span>-->
+            <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </a><span style="font-size:10px;color:black">&nbsp;&nbsp;字形</span>
+        <a href="#">
+        <span type="button" id = "glyphflag"
+              style="font-size:30px; left:5px ; color:black"
+              class="glyphflag glyphicon glyphicon-star-empty" >
+        </span>
+
+
+            <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </a><span style="font-size:10px;">&nbsp;&nbsp;聚类</span>
+        <input style = "width:40px" type="text" class="DBScanpara" id="expvalue" value="12"placeholder="exp...">
+        <input style = "width:40px" type="text" class="DBScanpara" id="disvalue" value="15"placeholder="dis...">
+
+
+        <button type="button" style = "width:40px">
+        <span type="button" id = "dbscabsubmit"
+              style="font-size:20px; left:3px "
+              class="glyphicon glyphicon-menu-right" >
+        </span>
+            <!--<p style = "text-align: left;left: 0px; font-size:10px">Submit</p>-->
+        </button>
+
+        <br>&nbsp;&nbsp;
+        <button type="button" style = "width:40px">
+        <span type="button" id = "arcsub"
+              style="font-size:15px; left:0px "
+              class="glyphicon glyphicon-minus" >
+        </span>
+            <!--<p style = "text-align: left;left: 0px; font-size:10px">Submit</p>-->
+        </button>
+        <br>&nbsp;&nbsp;
+        <button type="button" style = "width:40px">
+        <span type="button" id = "heatmapdisplaybytime"
+              style="font-size:15px; left:0px "
+              class="glyphicon glyphicon-play" >
+        </span>
+            <!--<p style = "text-align: left;left: 0px; font-size:10px">Submit</p>-->
+        </button>
+
+        <!--<input type="text" class="form-control1" id="txt2" placeholder="Searching">-->
+        <!--&nbsp;-->
+        <!--<img class="icon" alt="increase" src="img/sear.jpg">-->
+        <!--<img class="icon" alt="increase" src="img/glyph.jpg">-->
+        <!--<i style = "font-size: 50px" class="large material-icons">insert_chart</i>-->
+
+
+        <!--<input type="text" class="form-control1" id="txt2" placeholder="Search...">-->
+        <!--<i class="large search searchseveralpid" onclick="buttonsubmit()">Search</i>-->
+
+
+        <!--<i class="glyphflag large pie_chart"  >Glyph</i>-->
+
+<!--<form name="form2" id="form2"  method="post" style="position: absolute;left: 10%;top: 10%;height: 95%;width: 65%">-->
+    <!---->
+   <!--<button style="" class="glyphflag btn btn-default travelMode3" type="button" onclick="buttonsubmit()"><p style="font-size:8px">Glyph</p>-->
+   <!--</button>-->
+
+    <!--&lt;!&ndash;<span class="input-group-btn" style="position: absolute; ">&ndash;&gt;-->
+        <!--&lt;!&ndash;<button class="btn btn-default travelMode3" type="button" onclick="buttonsubmit()">Go!</button>&ndash;&gt;-->
+    <!--&lt;!&ndash;</span>&ndash;&gt;-->
+    <!---->
+<!--</form>-->
+    </div>
+</div>
+
+
+
+
+
+<!--左边的参数-->
+<div id="parameters" style="
+border:1px solid #667080;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+/*background:#ecfff4;*/
+position: absolute;top: 117;left:721px; height: 40%;width:15%">
+
+
+
+    <!--选择的人和时间-->
+    <div id="containerfloor2" style="position: absolute;top: 8%;left: 10px; height: 10%">
+        <form name="form1" id="formday"  method="post">
+            <select   class="travelMode" name="txt1" id="dayvalue" onchange="readfile();showdynamicmatrix();trackselect()">
+                <option value ="0" selected>日期</option>
+                <option value ="1" >第一天</option>
+                <option value="2"  >第二天</option>
+                <option value ="3"   >第三天</option>
+            </select>
+            <!--<input type="button" value="提交" onclick="readfile()">-->
+        </form>
+    </div>
+
+    <div style="position: absolute;top: 20%;left: 10px; height: 10%">
+        <form name="form1"   method="post">
+            <select   class="cluster travelMode" id="clusterMode" name="txt1" onchange="persondotchartchange()">
+                <option value ="BoxplotChart" >BoxplotChart</option>
+                <option value ="MDS1" selected>MDS分类</option>
+                <option value ="5" >kmeans分5类</option>
+                <option value="10"  >kmeans分10类</option>
+                <option value="15"  >kmeans分15类</option>
+                <option value ="20"   >.....</option>
+            </select>
+            <!--<input type="button" value="提交" onclick="readfile()">-->
+        </form>
+    </div>
+
+
+
+    <div style="position: absolute;top: 68%;left: 16px; height: 26%;width: 84%;background: #2B2B2B;
+border:1px solid #CCD1D1    ;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);"  >
+        <p style="position: absolute;top: 15%;left: 17px;width: 84%; height: 15% ;color: white;font-size: 16px">显示与此人同时进场的轨迹</p>
+        <br>
+        <!--class="btn btn-default btn-sm"-->
+        <form name="displayidsort" id="display"  method="post">
+            <span type="button" id = "displayidsort"  >
+                <input  style="position: absolute;top:34px;left: 1px;width: 57%; height: 35%" type="text" name="countnum" id="countnum" class="btn btn-default travelMode1" value="15232" placeholder="15232" >
+            <span class="btn btn-default travelMode2" style="position: absolute;top: 38%;left: 138px;width: 35%; height: 35%">Display</span>
+
+            </span>
+            <br>
+        </form>
+    </div>
+
+    <div style="position: absolute;top: 37%;left: 17px;width: 84%; height: 26% ;background: #2B2B2B;
+border:1px solid #CCD1D1    ;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);"
+
+    >
+        <!--显示heatmapinitall-->
+        <br>
+        <form name="heatmap" id="heatmapinitbutton" method="post">
+            <!--<input type="button" class="glyphicon glyphicon glyphicon-th" value="compare select clusters">-->
+            <!--<span class="glyphicon glyphicon glyphicon-th">&nbsp;Lasso</span>-->
+            <input type="text" name="txt1" id="giveheattimevalue" class="btn btn-default travelMode1" value  = "1 09:20:00" style="position: absolute;top:8px;left: 1px;width: 88%; height: 32%">
+            <span type="button" class="btn btn-default travelMode2" id = "heatmapinitall" style="position: absolute;top: 47%;left: 5px;width: 43%; height: 36%" >
+                Heatmap
+            </span>
+
+        </form>
+    </div>
+    <br>
+
+
+</div>
+
+
+<!--中间的会场-->
+<div id="containerfloor1" style="position: absolute;top: 40px;left: 16%;
+border:1px solid #667080; z-index:999
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+/*background:#12486C;*/
+height: 51%; width: 1060px">
+    <div style="z-index:999; position: absolute;top: 92%;left: 4px; height: 8%;">
+
+        <br><span id = "cleartracks" class="glyphicon glyphicon-refresh"></span>
+          <!--<span type="button" id = "cleartracks" class="btn btn-default travelMode6" >-->
+            <!--<span >Clear all tracks</span>-->
+        <!--</span>-->
+        <!--&nbsp;clear&nbsp;-->
+    </div>
+</div>
+
+<!--聚类的散点图-->
+<!--<div id="divpersondot" style="position: absolute;-->
+
+<div id="div_persondot1" style="position: absolute;
+border:1px solid #667080;box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+top: 40px;right: 43px; height: 51%; width: 26%">
+    <!--<div class="chart-wrapper" id="chart-distro1"  style="width:0px;height:0px">-->
+    <!--<div class="chart-options" >-->
+        <!--<button class = "btn btn-default travelMode5" id = "button1"-->
+                <!--onclick="chart1.violinPlots.hide();chart1.boxPlots.show({reset:true});chart1.notchBoxes.hide();chart1.dataPlots.change({showPlot:false,showBeanLines:false})">-->
+            <!--Box</button>-->
+        <!--<button class = "btn btn-default travelMode5" id = "button2"-->
+                <!--onclick="chart1.violinPlots.hide();chart1.notchBoxes.show({reset:true});chart1.boxPlots.show({reset:true, showBox:false,showOutliers:true,boxWidth:20,scatterOutliers:true});chart1.dataPlots.change({showPlot:false,showBeanLines:false})">-->
+            <!--Notched</button>-->
+        <!--<button class = "btn btn-default travelMode5" id = "button3"-->
+                <!--onclick="chart1.violinPlots.show({reset:true,clamp:0});chart1.boxPlots.show({reset:true, showWhiskers:false,showOutliers:false,boxWidth:10,lineWidth:15,colors:['#555']});chart1.notchBoxes.hide();chart1.dataPlots.change({showPlot:false,showBeanLines:false})">-->
+            <!--Violin</button>-->
+        <!--<button class = "btn btn-default travelMode5" id = "button4"-->
+                <!--onclick="chart1.violinPlots.show({reset:true,clamp:1});chart1.boxPlots.show({reset:true, showWhiskers:false,showOutliers:false,boxWidth:10,lineWidth:15,colors:['#555']});chart1.notchBoxes.hide();chart1.dataPlots.change({showPlot:false,showBeanLines:false})">-->
+            <!--Violin Plot</button>-->
+        <!--&lt;!&ndash;<button class = "btn btn-default travelMode5" id = "button5"&ndash;&gt;-->
+                <!--&lt;!&ndash;onclick="chart1.violinPlots.show({reset:true, width:50, clamp:0, resolution:30, bandwidth:50});chart1.dataPlots.show({showBeanLines:true,beanWidth:50,showPlot:false,colors:['#555']});chart1.boxPlots.hide();chart1.notchBoxes.hide()">&ndash;&gt;-->
+            <!--&lt;!&ndash;Bean</button>&ndash;&gt;-->
+        <!--&lt;!&ndash;<button class = "btn btn-default travelMode5" id = "button6"&ndash;&gt;-->
+                <!--&lt;!&ndash;onclick="chart1.violinPlots.hide();chart1.dataPlots.show({showPlot:true, plotType:'beeswarm',showBeanLines:false, colors:null});chart1.notchBoxes.hide();chart1.boxPlots.hide();">&ndash;&gt;-->
+            <!--&lt;!&ndash;Beeswarm Plot</button>&ndash;&gt;-->
+        <!--<button class = "btn btn-default travelMode5" id = "button7"-->
+                <!--onclick="chart1.violinPlots.hide();chart1.dataPlots.show({showPlot:true, plotType:40, showBeanLines:false,colors:null});chart1.notchBoxes.hide();chart1.boxPlots.hide();">-->
+            <!--Scatter</button>-->
+        <!--<button class = "btn btn-default travelMode5" id = "button8"-->
+                <!--onclick="if(chart1.dataPlots.options.showLines){chart1.dataPlots.change({showLines:false});} else {chart1.dataPlots.change({showLines:['median','quartile1','quartile3']});}">-->
+            <!--Trend</button>-->
+    <!--</div>-->
+</div>
+
+</div>
+
+<!--rose diagram-->
+<div id="divrosediagram"  style="position: absolute;
+border:1px solid #667080;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+/*background:#cbc582;*/
+top: 147%;left: 12px; height: 24%; width: 15%">
+
+</div>
+<div  style="position: absolute;width: 2%;height: 2%;left: 10%;top: 54%">
+    <!--<p>wgfugfdfg</p>-->
+    <button id="one" style="position: absolute; opacity:0;width: 100%;height: 100%" onclick="day1hatmap()"></button>
+</div>
+<div  style="position: absolute;width: 2%;height: 2%;left: 7%;top: 65%">
+    <!--<p>wgfugfdfg</p>-->
+    <button id="two" style="position: absolute;  opacity:0;width: 100%;height: 100%" onclick="day2hatmap()"></button>
+</div>
+<div  style="position: absolute;width: 2%;height: 2%;left: 5%;top: 54%">
+    <!--<p>wgfugfdfg</p>-->
+    <button id="three" style="position: absolute; opacity:0;width: 100%;height: 100%" onclick="day3hatmap()"></button>
+</div>
+
+<!--最下面的bar图-->
+<div id="div_personidstay" style="position: absolute;
+border:1px solid #667080; z-index:999;background: white;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+/*background:#12486C;*/
+top: 378px;  right:1px; height: 15%; width: 14%">
+
+    <!--<button type="button" class="btn btn-default" aria-label="Left Align">-->
+        <!--<span id = "barchartreset" class="glyphicon glyphicon glyphicon-resize-small" aria-hidden="true"></span>-->
+    <!--</button>-->
+    <div style="position:absolute;right:0px"><img id="barchartreset" src="img/smaller.jpg" alt =""></div>
+    <!--<span type="button" id = "barchartreset" class="glyphicon glyphicon-refresh" style="top: 0%;height: 0%" >-->
+        <!--<span >reset</span>-->
+    <!--</span>-->
+</div>
+
+<!--matrix chart-->
+<div id="matrixcalendar" style="position: absolute;
+border:1px solid #667080;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+/*background:#12486C    ;*/
+/*bottom: 0px;*/
+top: 172%;right:1%; height: 26%; width: 32%"></div>
+
+<!--line chart-->
+
+<div id="playfireformeeting" style="position: absolute;
+border:1px solid #667080;
+box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);
+top: 158%;left: 16.5%; height: 13%; width: 50%"></div>
+
+
+
+<div id="regionvolumplotchart"  style="position: absolute;
+border:1px solid #667080;
+/*box-shadow: inset 0px 0px 2px 5px rgba(149,165,154,0.2);*/
+/*background:#cbc582;*/
+top: 338px;left: -296px; height: 299px; width: 894px">
+    <div class="chart-wrapper" id="chart-distro1"  style="width:0px;height:0px">
+        <div class="chart-options" >
+            <button class = "btn btn-default travelMode5" id = "button1"style="color: black; background-color: #a6a4a4"
+                    onclick="regionvolumeplotchart.violinPlots.hide();regionvolumeplotchart.boxPlots.show({reset:true});regionvolumeplotchart.notchBoxes.hide();regionvolumeplotchart.dataPlots.change({showPlot:false,showBeanLines:false})">
+                Box</button>
+            <button class = "btn btn-default travelMode5" id = "button7"
+                    onclick="regionvolumeplotchart.violinPlots.hide();regionvolumeplotchart.dataPlots.show({showPlot:true, plotType:40, showBeanLines:false,colors:null});regionvolumeplotchart.notchBoxes.hide();regionvolumeplotchart.boxPlots.hide();">
+                Scatter</button>
+        </div>
+    </div>
+
+
+
+    <br><span id = "treetransfer" class="glyphicon glyphicon glyphicon-transfer"
+style="bottom:0px;position:absolute;right:0px"
+></span>
+</div>
+
+
+
+
+
+<!--rosediagram-->
+<script src="dataminingtemp/rosediagram.js"></script>
+
+<!--boxplot-->
+<script src="dependence/distrochart.js" charset="utf-8"></script>
+<script src="dataminingtemp/staytimethreeday.js"></script>
+
+<script src="dataminingtemp/donutchart.js"></script>
+
+<script src="personidtrack.js"></script>
+<script src="globalfuntion.js"></script>
+<script src="layoutgraph/layoutmap.js"></script>
+<script src="layoutgraph/LayoutSensorsandEntrance.js"></script>
+<script src="dataminingtemp/schedule.js"></script>
+
+<script type="text/javascript">
+    var globaltest1 = new Array();
+    var globaltest2 = new Array();
+
+    var originedataallpersonsdata;
+
+    //selected cluster(that is Characterization by a number of personid) with lasso to analyze
+    var selectedpersonidcluster = new Array();
+    var selectedpersoniddatacluster = new Array();
+
+    var selectedadivpersonidcluster = new Array();
+    var selectedadivpersoniddatacluster = new Array();
+
+    var allcharacteridtrack = new Map();
+
+    //初始化
+    var filenameinit = "data/day"+document.getElementById("dayvalue").value+".csv";
+    d3.csv("data/alldayfinal.csv",function(error,csvdata){
+        originedataallpersonsdata = csvdata;
+        var size  = 0;
+        // jsonArray.data = new Array();
+
+        for(var p = 0; p<csvdata.length; p++){
+            if(allcharacteridtrack.hasOwnProperty(csvdata[p].id) ){
+                var q = csvdata[p].sid;
+                var item = {};
+                item.time = csvdata[p].time;
+                item.sensorid = q ;
+                item.sensorname = "RectSensoridfloor"+ q;
+                allcharacteridtrack[csvdata[p].id].push(item)
+            }else{
+                size++
+                var q = csvdata[p].sid;
+                var array = new Array();
+                var item = {};
+                item.time = csvdata[p].time;
+                item.sensorid = q ;
+                item.sensorname = "RectSensoridfloor"+ q;
+                array.push(item);
+                allcharacteridtrack[csvdata[p].id] = array;
+            }
+
+        }
+
+    });
+
+    function readfile(){
+        // for(var i in allcharacteridtrack){delete allcharacteridtrack[i]}
+        // var allcharacteridtracktemp = new Map();
+        // var filename = "data/day"+document.getElementById("dayvalue").value+".csv";
+        // console.log("readfile: "+filename)
+        // d3.csv(filename,function(error,csvdata){
+        //     originedataallpersonsdata = csvdata;
+        //     var size  = 0;
+        //     for(var p = 0; p<csvdata.length; p++){
+        //         if(allcharacteridtracktemp.hasOwnProperty(csvdata[p].id) ){
+        //             var q = csvdata[p].sid;
+        //             var item = {};
+        //             item.time = csvdata[p].time;
+        //             item.sensorid = q ;
+        //             item.sensorname = "RectSensoridfloor"+ q;
+        //             allcharacteridtracktemp[csvdata[p].id].push(item)
+        //         }else{
+        //             var q = csvdata[p].sid;
+        //             size++
+        //             var array = new Array();
+        //             var item = {};
+        //             item.time = csvdata[p].time;
+        //             item.sensorid = q ;
+        //             item.sensorname = "RectSensoridfloor"+ q
+        //             array.push(item);
+        //             allcharacteridtracktemp[csvdata[p].id] = array;
+        //         }
+        //     }
+        //     allcharacteridtrack = allcharacteridtracktemp;
+        // });
+        persondotchart1();
+    }
+
+    // function sleep (time) {return new Promise((resolve) => setTimeout(resolve, time)); }
+    // sleep(500).then(() => { })
+    // // for(var prop in allcharacterid){
+
+    var personidinputtemp = 0;
+    $(".glyphflag").click(function(){})
+    function buttonsubmit(){
+        d3.selectAll(".persontrack").remove();
+        d3.selectAll(".personidtracktexttime").remove();
+        d3.selectAll(".personidtrackdot").remove();
+        d3.selectAll(".movingcircle").remove();
+        d3.selectAll(".moveingtext").remove();
+        //第一种方法
+        var temp=document.getElementById("txt2").value;   //注意引号内的内容应该是文本框的id而不能是name
+        //第二种方法
+        // var temp=document.form1.txt1.value;   //这里第一个“.”后面必须是form标签的name而不能是id；而第二个“.”后id和name均可。
+        ////window.alert(temp);
+        //获取personid的id
+        var allserchpid = temp.split(" ")
+        d3.selectAll(".personid").attr("r",personiddotoriginer)
+            .style("opacity", 0.7).style("fill", persondotdefaultcolor)
+        let dayvalue = document.getElementById("dayvalue").value
+        allserchpid.forEach(function(d,i){
+            personidtrackclick(d,trackcolor[i])
+            //高亮personiddot
+            d3.select("#personid"+d).attr("r",personiddotoselectedr).style("opacity", 1).style("fill", trackcolor[i])
+            personidinputtemp = temp
+        })
+        barchartinputpidarray(allserchpid)
+    }
+
+</script>
+
+<script src="dataminingtemp/matrix.js"></script>
+<script src="dataminingtemp/heartmap.js"></script>
+<script src="dataminingtemp/personidstay.js"></script>
+<script src="persondot.js"></script>
+
+<script src="dataminingtemp/selectclusters.js"></script>
+<script src="dataminingtemp/displayidsort.js"></script>
+<script src="dataminingtemp/playfireformeeing.js"></script>
+
+<script type='text/javascript'>
+
+    var timePolarity = 0;
+    var nTimeGranularity = 1;
+    var fileName = "ConferenceVis"; //json_encode for the String
+    var getText = true;
+    var jsonArray =  {}
+
+</script>
+<!--<script src="js/datajs/volumesum3days.js"></script>-->
+<!--<script src="js/datajs/frequentday3sum.js"></script>-->
+<script src="js/datajs/jsonarrayvolumesum3day2.js"></script>
+<!--<script src="js/datajs/frequentday1.js"></script>-->
+<script type='text/javascript'>
+
+    jsonArray.ranges = {
+        "type": "variation",
+        "name": "conference data",
+        "children": [
+
+            {"name": "First Floor", "children":
+                    [
+                        {"name": "mainMeeting"},
+                        {"name": "room1"},
+                        {"name": "confA"},
+                        {"name": "confB"},
+                        {"name": "confC"},
+                        {"name": "confD"},
+                        {"name": "poster"},
+
+                        {"name": "room2"},
+                        {"name": "room3"},
+                        {"name": "room4"},
+                        {"name": "wc1"},
+                        {"name": "wc2"},
+                        {"name": "exhibition"},
+                        {"name": "serviceRoom"},
+
+                        {"name": "signdesk"},
+                        {"name": "firstAisle"},
+                    ]
+            },
+
+            {"name": "Second Floor", "children":
+                    [
+                        {"name": "relaxRoom"},
+                        {"name": "room5"},
+                        {"name": "wc3"},
+                        {"name": "escalator"},
+                        {"name": "room6"},
+                        {"name": "restaurant"},
+
+                        {"name": "secondAisle"}
+                    ]
+
+            }
+        ]
+    }
+</script>
+<script type="text/javascript" src="js/jquery-2.2.3.min.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+<script type="text/javascript" src="js/jquery.mousewheel.min.js"></script>
+<script type="text/javascript" src="js/jquery.cookie.min.js"></script>
+<script type="text/javascript" src="js/fastclick.min.js"></script>
+<script type="text/javascript" src="js/clearmin.min.js"></script>
+<script type="text/javascript" src="js/d3v0.min.js"></script>
+<script type="text/javascript" src="js/compVecOut.js"></script>
+<script type="text/javascript" src="js/rpoly.js"></script>
+<script type="text/javascript" src="js/PolyReCoeffInT.js"></script>
+<script type="text/javascript" src="js/svg-crowbar-2.js"></script>
+<script type="text/javascript" src="js/chroma.js"></script>
+<script type="text/javascript" src="js/generalizes.js"></script>
+<script type="text/javascript" src="js/multistream-hierarchy-util.js"></script>
+<script type="text/javascript" src="js/multistream-var-global.js"></script>
+<script type="text/javascript" src="js/multiresolution-vis.js"></script>
+<script type="text/javascript" src="js/tree-vis.js"></script>
+<script type="text/javascript" >
+
+
+    var treevistext = d3.select("#tree-vis").selectAll("text")._groups[0]
+    //不等于数字，就小号字体
+    treevistext.forEach(function(d,i){
+        var sid = d.innerHTML ;
+        if(!isNaN(  parseInt(sid)  )){
+            d.style.cssText = "font-size: 4px"
+        }
+    })
+
+
+    d3.select("#cm-menu").style("background",null).style("width","300px")
+    d3.select("#cm-header").select(".cm-navbar").remove()
+    function multistreamsetting() {
+        d3v0.select("body").select("#global")
+            .attr("position","absolute").style("top", "521px")
+        d3v0.select("#multiresolution-vis").style("left","276px")
+            .style("position","absolute").style("width","1635px")
+        d3v0.select("#container-fluid").style("left","276px")
+            .style("position","absolute").style("width","1635px")
+
+        d3v0.select("body").select("#multiresolution-vis")
+            .attr("position","absolute").attr("height","350px")
+    }
+    $("#tooltipfoot1").mouseup(function(){
+
+        multistreamsetting()
+        setTimeout(function() { multistreamsetting(); }, 430);
+
+    })
+    $("#tooltipfoot2").mouseup(function(){
+
+        multistreamsetting()
+        setTimeout(function() { multistreamsetting(); }, 430);
+
+    })
+
+    d3.selectAll("#parameters").style("display","none")
+d3.select("#cm-menu-content").style("top","40px")
+
+    var treevisandstatisticflage = true;
+    d3.select("#tree-vis").style("display","none")
+    $( "#treetransfer" ).click(function() {
+        if(treevisandstatisticflage){
+            d3.select("#tree-vis").style("display","none")
+            d3.select("#volumebarchart").style("display","block")
+            d3.select(".chart-area").style("display","block")
+            treevisandstatisticflage = false;
+        }else{
+            d3.select("#tree-vis").style("display","block")
+            d3.select("#volumebarchart").style("display","none")
+            d3.select(".chart-area").style("display","none")
+            treevisandstatisticflage = true;
+        }
+    })
+
+
+
+</script>
+
+<script src="dataminingtemp/regionvolumebarchart.js"></script>
+
+<!--<script src="dataminingtemp/RegionvolumPlotchart.js"></script>-->
+
+
+</body>
+</html>
